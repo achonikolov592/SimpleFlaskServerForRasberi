@@ -1,0 +1,45 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+.container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+}
+.container img {
+    width: 30vw;
+    height: 30vw;
+}
+.button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.button:hover {
+    background-color: #0056b3;
+}
+
+label{
+    width: fit-content;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+th {
+    background-color: #f4f4f4;
+}

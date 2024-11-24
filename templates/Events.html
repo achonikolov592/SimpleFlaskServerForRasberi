@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/layout.css">
+    <title>Room 33 events</title>
+</head>
+<body>
+    <a href="/" class="button">Home</a>
+    <h1>Events:</h1>
+    {% if events %}
+    <table>
+        <thead>
+            <tr>
+                {% for key in events[0].keys() %}
+                    <th>{{ key }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in events %}
+                <tr>
+                    {% for value in row.values() %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No events available.</p>
+    {% endif %}
+    {% if role=="admin" %}
+        <a href="/addEvent" class="button"> Add event</a>
+        <a href="/deleteEvent" class="button"> Delete event</a>
+    {% endif %}
+</body>
+</html>

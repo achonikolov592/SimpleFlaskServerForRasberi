@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/layout.css">
+    <title>Add event in room 33</title>
+</head>
+<body>
+    <h1>Submit Your Information</h1>
+    <form action="/addEvent" method="POST">
+        <label for="Date">Date:</label>
+        <input type="text" id="Date" name="Date" required>
+        <br><br>
+        
+        <label for="Time">Time:</label>
+        <input type="text" id="Time" name="Time" required>
+        <br><br>
+
+        <label for="Type">Type:</label>
+        <input type="text" id="Type" name="Type" required>
+        <br><br>
+        
+        <label for="What to bring">What to bring:</label>
+        <input type="text" id="What to bring" name="What to bring" required>
+        <br><br>
+        
+        <button type="submit" class="button">Add</button>
+    </form>
+</body>
+</html>

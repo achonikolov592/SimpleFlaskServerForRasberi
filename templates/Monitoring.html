@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/layout.css">
+    <title>Room 33 monitoring</title>
+</head>
+<body>
+    <a href="/" class="button">Home</a>
+    <h1>IoT device:</h1>
+    {% if iotdev %}
+    <table>
+        <thead>
+            <tr>
+                {% for key in iotdev[0].keys() %}
+                    <th>{{ key }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in iotdev %}
+                <tr>
+                    {% for value in row.values() %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No IoT devices available.</p>
+    {% endif %}
+    <h1>Mesurments:</h1>
+    {% if measurments %}
+    <table>
+        <thead>
+            <tr>
+                {% for key in measurments[0].keys() %}
+                    <th>{{ key }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in measurments %}
+                <tr>
+                    {% for value in row.values() %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No measurments available.</p>
+    {% endif %}
+    <a href="/addIoTdevice" class="button">Add IoT device</a>
+    <a href="/deleteIoTdevice" class="button">Delete IoT device</a>
+    <a href="/deleteMeasurment" class="button">Delete measurment</a>
+</body>
+</html>
