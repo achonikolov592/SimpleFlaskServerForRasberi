@@ -5,12 +5,5 @@
         "Time": "23:00",
         "Type": "Party",
         "What to bring": "Snacks and beverages"
-    },
-    {
-        "id": 2,
-        "Date": "12-12-2024",
-        "Time": "19:00",
-        "Type": "Belot",
-        "What to bring": "Snacks"
     }
 ]

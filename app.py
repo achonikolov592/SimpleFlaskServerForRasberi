@@ -4,7 +4,10 @@ from flask_jwt_extended import (
 )
 import json
 
-from datetime import timedelta
+import requests
+from requests.auth import HTTPBasicAuth
+
+from datetime import timedelta, datetime
 
 app = Flask(__name__)
 
@@ -22,6 +25,8 @@ iotdev_number = 1
 iotdev_path="./IoTdev.json"
 measurments_path="./measurments.json"
 
+energy_path = "./energy.json"
+
 
 admins = [{"username":"Acho", "password":"secret"}, {"username":"Awo", "password":"secret"}, {"username":"Henry", "password":"secret"}, {"username":"Dacho", "password":"secret"}]
 users = [{"username":"Neighbours", "password":"password"}]
@@ -30,9 +35,6 @@ def get_values(path):
     try:
         with open(path, 'r') as file:
             data = json.load(file)
-            
-            if not isinstance(data, list):
-                raise ValueError("JSON data must be a list to append new items.")
 
     except (FileNotFoundError, json.JSONDecodeError):
         data = []
@@ -148,6 +150,21 @@ def delete_from_values(id, path):
 
     with open(path, 'w') as file:
         json.dump(data, file, indent=4)
+
+@app.route('/energyConsumption', methods=["GET"])
+@jwt_required()
+def energy_consumption_page():
+    #global energy_path
+    with open(energy_path, 'r') as file:
+        data = json.load(file)
+
+        date_today = str(datetime.now().month) + "-" + str(datetime.now().year)
+
+        for i in range(len(data)):
+            if data[i].get(date_today) != None:
+                return render_template("EnergyConsumption.html", totalConsumption=data[i][date_today]["totalLoad"], price=round(data[i][date_today]["cost"], 2))
+        
+        return render_template("EnergyConsumption.html", totalConsumption="0", price="0")
 
 @app.route('/deleteEvent', methods=["GET"])
 @jwt_required()
