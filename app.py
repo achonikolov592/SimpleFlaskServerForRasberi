@@ -54,7 +54,7 @@ def monitoring_page():
     jwt_tok = get_jwt()
     count = int(request.args.get('count', 100))
     if jwt_tok.get('role') == "admin":
-        return render_template("Monitoring.html", iotdev=get_values(iotdev_path), measurments=get_values(measurments_path)[:count])
+        return render_template("Monitoring.html", iotdev=get_values(iotdev_path), measurments=get_values(measurments_path)[-count:])
     else:
         return render_template('No_access.html')
 @app.route('/events')
