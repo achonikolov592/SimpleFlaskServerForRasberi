@@ -2,6 +2,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import json
 from datetime import datetime
+from time import sleep
 
 counter=0
 path = "./energy.json"
@@ -30,10 +31,11 @@ def write_in_json_file(totalLoad, price):
         json.dump(data, file, indent=4)
 
 
-#while True:
-    #response = requests.get("http://192.168.33.3:80/netio.json", auth=HTTPBasicAuth("netio", "netio"))
-    #if response.status_code == 200:
-        #data = response.json()
-        #totalLoad = float(data["GlobalMeasure"]["totalLoad"])
-        #price = totalLoad / 1000 * 0.13
-write_in_json_file(10, 10*0.000000036)
+while True:
+    response = requests.get("http://192.168.33.3:80/netio.json", auth=HTTPBasicAuth("netio", "netio"))
+    if response.status_code == 200:
+        data = response.json()
+        totalLoad = float(data["GlobalMeasure"]["TotalLoad"])
+        price = totalLoad * 0.13 / (1000 * 3600) 
+        write_in_json_file(totalLoad,price)
+        sleep(1)

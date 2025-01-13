@@ -5,6 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/css/layout.css">
     <title>Room 33 monitoring</title>
+    <script>
+        async function updateShownMeasurements() {
+            const numMeasurements = parseInt(document.getElementById("measurementCount").value, 10);
+
+            if (isNaN(numMeasurements) || numMeasurements < 1) {
+                alert("Please enter a valid number of measurements.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/monitoring?count=${numMeasurements}`, {
+                    method: 'GET',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTable = doc.querySelector('#measurementsTable');
+                if (newTable) {
+                    document.querySelector('#measurementsTable').innerHTML = newTable.innerHTML;
+                }
+
+            } catch (error) {
+                console.error("Error updating shown measurements:", error);
+                alert("Failed to update. Please try again.");
+            }
+        }
+    </script>
 </head>
 <body>
     <a href="/" class="button">Home</a>
@@ -33,7 +65,12 @@
     {% endif %}
     <h1>Mesurments:</h1>
     {% if measurments %}
-    <table>
+    <div>
+        <label for="measurementCount">Number of measurements to show:</label>
+        <input type="number" id="measurementCount" min="1" value="5">
+        <button class="button" onclick="updateShownMeasurements()">Update Shown Measurements</button>
+    </div>
+    <table id="measurementsTable">
         <thead>
             <tr>
                 {% for key in measurments[0].keys() %}

@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template,make_response, redirect, url_for
+from flask import Flask, request, render_template,make_response, redirect, url_for, jsonify
 from flask_jwt_extended import (
     JWTManager, create_access_token, jwt_required, get_jwt
 )
@@ -52,8 +52,9 @@ def index():
 @jwt_required()
 def monitoring_page():
     jwt_tok = get_jwt()
+    count = int(request.args.get('count', 100))
     if jwt_tok.get('role') == "admin":
-        return render_template("Monitoring.html", iotdev=get_values(iotdev_path), measurments=get_values(measurments_path))
+        return render_template("Monitoring.html", iotdev=get_values(iotdev_path), measurments=get_values(measurments_path)[:count])
     else:
         return render_template('No_access.html')
 @app.route('/events')
@@ -109,7 +110,41 @@ def login():
 
     return response
 
+@app.route('/loginMethod', methods=['POST'])
+def loginMethod():
+    data = request.get_json()
+    username = data["email"]
+    password = data['password']
 
+    response = make_response(redirect(url_for('index')))
+
+    for admin in admins:
+        if admin['username'] == username:
+            if admin['password'] == password:
+                access_token = create_access_token(identity=username, additional_claims={"role": "admin"},expires_delta=timedelta(minutes=30))
+                
+                response = make_response(redirect(url_for('index')))
+                response.set_cookie(
+                    'access_token_cookie', 
+                    access_token,
+                    httponly=True,
+                    samesite='Strict'
+                )
+    
+    for user in users:
+        if user['username'] == username:
+            if user['password'] == password:
+                access_token = create_access_token(identity=username, additional_claims={"role": "user"},expires_delta=timedelta(minutes=30))
+                
+                response = make_response(redirect(url_for('index')))
+                response.set_cookie(
+                    'access_token_cookie', 
+                    access_token,
+                    httponly=True,
+                    samesite='Strict'
+                )
+
+    return response
 
 def add_to_values(new_data, path):
     data = get_values(path)
@@ -122,23 +157,31 @@ def add_to_values(new_data, path):
 @app.route('/addEvent', methods=["GET"])
 @jwt_required()
 def add_event_page():
-    return render_template("AddEvent.html")
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        return render_template("AddEvent.html")
+    else:
+        return render_template('No_access.html')
 
 @app.route('/addEvent', methods=["POST"])
 @jwt_required()
 def add_event():
-    global events_number
-    date = request.form.get("Date")
-    time = request.form.get('Time')
-    type_of_event = request.form.get("Type")
-    what_to_get = request.form.get('What to bring')
-    events_number += 1
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        global events_number
+        date = request.form.get("Date")
+        time = request.form.get('Time')
+        type_of_event = request.form.get("Type")
+        what_to_get = request.form.get('What to bring')
+        events_number += 1
 
-    add_to_values({"id":events_number, "Date":date, "Time":time, "Type":type_of_event, "What to bring":what_to_get}, event_path)
+        add_to_values({"id":events_number, "Date":date, "Time":time, "Type":type_of_event, "What to bring":what_to_get}, event_path)
 
-    response = make_response(redirect(url_for('events_page')))
+        response = make_response(redirect(url_for('events_page')))
 
-    return response
+        return response
+    else:
+         return jsonify({'success': False, "message": "Not authenticated"}), 401
 
 def delete_from_values(id, path):
     data = get_values(path)
@@ -154,105 +197,140 @@ def delete_from_values(id, path):
 @app.route('/energyConsumption', methods=["GET"])
 @jwt_required()
 def energy_consumption_page():
-    #global energy_path
-    with open(energy_path, 'r') as file:
-        data = json.load(file)
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        with open(energy_path, 'r') as file:
+            data = json.load(file)
 
-        date_today = str(datetime.now().month) + "-" + str(datetime.now().year)
+            date_today = str(datetime.now().month) + "-" + str(datetime.now().year)
 
-        for i in range(len(data)):
-            if data[i].get(date_today) != None:
-                return render_template("EnergyConsumption.html", totalConsumption=data[i][date_today]["totalLoad"], price=round(data[i][date_today]["cost"], 2))
-        
-        return render_template("EnergyConsumption.html", totalConsumption="0", price="0")
+            for i in range(len(data)):
+                if data[i].get(date_today) != None:
+                    return render_template("EnergyConsumption.html", totalConsumption=data[i][date_today]["totalLoad"], price=round(data[i][date_today]["cost"], 2))
+            
+            return render_template("EnergyConsumption.html", totalConsumption="0", price="0")
+    else:
+        return render_template('No_access.html')
 
 @app.route('/deleteEvent', methods=["GET"])
 @jwt_required()
 def delete_event_page():
-    return render_template("DeleteEvent.html")
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        return render_template("DeleteEvent.html")
+    else:
+        return render_template('No_access.html')
 
 @app.route('/deleteEvent', methods=["POST"])
 @jwt_required()
 def delete_event():
-    global events_number
-    id = int(request.form.get("ID"))
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        global events_number
+        id = int(request.form.get("ID"))
 
-    delete_from_values(id, event_path)
+        delete_from_values(id, event_path)
 
-    response = make_response(redirect(url_for('events_page')))
+        response = make_response(redirect(url_for('events_page')))
 
-    return response
+        return response
+    else:
+         return jsonify({'success': False, "message": "Not authenticated"}), 401
 
 @app.route('/addIoTdevice', methods=["GET"])
 @jwt_required()
 def add_IoTdev_page():
-    return render_template("AddIoTdevice.html")
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        return render_template("AddIoTdevice.html")
+    else:
+        return render_template('No_access.html')
 
 @app.route('/addIoTdevice', methods=["POST"])
 def add_iot_dev():
-    global iotdev_number
-    name = request.form.get("Name")
-    job = request.form.get('Job')
-    desc = request.form.get('Description')
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        global iotdev_number
+        name = request.form.get("Name")
+        job = request.form.get('Job')
+        desc = request.form.get('Description')
 
-    iotdev_number += 1
+        iotdev_number += 1
 
-    add_to_values({"id":iotdev_number, "Name":name, "Job":job, "Description":desc}, iotdev_path)
+        add_to_values({"id":iotdev_number, "Name":name, "Job":job, "Description":desc}, iotdev_path)
 
-    response = make_response(redirect(url_for('monitoring_page')))
+        response = make_response(redirect(url_for('monitoring_page')))
 
-    return response
+        return response
+    else:
+        return jsonify({'success': False, "message": "Not authenticated"}), 401
 
 @app.route('/addMeasurment', methods=["POST"])
 def add_measurment():
-    global measurment_number
-    data = request.get_json()
-    name = data["Sensor name"]
-    measure = data['Measure']
-    value = data['Sensor Value']
-    uom = data["Sensor Unit of measurment"]
+        global measurment_number
+        data = request.get_json()
+        name = data["Sensor name"]
+        measure = data['Measure']
+        value = data['Sensor Value']
+        uom = data["Sensor Unit of measurment"]
 
-    measurment_number += 1
+        measurment_number += 1
 
-    add_to_values({"id":measurment_number, "Sensor name":name, "Mesaure":measure, "Sensor value":value, "Sensor Unit of measurment":uom}, measurments_path)
+        add_to_values({"id":measurment_number, "Sensor name":name, "Mesaure":measure, "Sensor value":value, "Sensor Unit of measurment":uom}, measurments_path)
 
-    response = make_response(redirect(url_for('monitoring_page')))
+        response = make_response(redirect(url_for('monitoring_page')))
 
-    return response
+        return response
 
 @app.route('/deleteIoTdevice', methods=["GET"])
 @jwt_required()
 def delete_IoTdev_page():
-    return render_template("DeleteIoTdevice.html")
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        return render_template("DeleteIoTdevice.html")
+    else:
+        return render_template('No_access.html')
 
 @app.route('/deleteIoTdevice', methods=["POST"])
 @jwt_required()
 def delete_IoTdev():
-    global events_number
-    id = int(request.form.get("ID"))
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        global events_number
+        id = int(request.form.get("ID"))
 
-    delete_from_values(id, iotdev_path)
+        delete_from_values(id, iotdev_path)
 
-    response = make_response(redirect(url_for('monitoring_page')))
+        response = make_response(redirect(url_for('monitoring_page')))
 
-    return response
+        return response
+    else:
+         return jsonify({'success': False, "message": "Not authenticated"}), 401
 
 @app.route('/deleteMeasurment', methods=["GET"])
 @jwt_required()
 def delete_measurment_page():
-    return render_template("DeleteMeasurment.html")
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        return render_template("DeleteMeasurment.html")
+    else:
+        return render_template('No_access.html')
 
 @app.route('/deleteMeasurment', methods=["POST"])
 @jwt_required()
 def delete_measurment():
-    global events_number
-    id = int(request.form.get("ID"))
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
+        global events_number
+        id = int(request.form.get("ID"))
 
-    delete_from_values(id, measurments_path)
+        delete_from_values(id, measurments_path)
 
-    response = make_response(redirect(url_for('monitoring_page')))
+        response = make_response(redirect(url_for('monitoring_page')))
 
-    return response
+        return response
+    else:
+        return jsonify({'success': False, "message": "Not authenticated"}), 401
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
