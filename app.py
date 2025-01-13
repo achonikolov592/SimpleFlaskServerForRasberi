@@ -28,7 +28,7 @@ measurments_path="./measurments.json"
 energy_path = "./energy.json"
 
 
-admins = [{"username":"Acho", "password":"secret"}, {"username":"Awo", "password":"secret"}, {"username":"Henry", "password":"secret"}, {"username":"Dacho", "password":"secret"}]
+admins = [{"username":"Acho", "password":"secret"}, {"username":"Awo", "password":"secret"}, {"username":"Henry", "password":"secret"}, {"username":"Dacho", "password":"secret"}, {"username":"Destina", "password":"secret"}]
 users = [{"username":"Neighbours", "password":"password"}]
 
 def get_values(path):
@@ -54,7 +54,7 @@ def monitoring_page():
     jwt_tok = get_jwt()
     count = int(request.args.get('count', 100))
     if jwt_tok.get('role') == "admin":
-        return render_template("Monitoring.html", iotdev=get_values(iotdev_path), measurments=get_values(measurments_path)[-count:])
+        return render_template("Monitoring.html", iotdev=get_values(iotdev_path), measurments=get_values(measurments_path)[:count])
     else:
         return render_template('No_access.html')
 @app.route('/events')
@@ -149,7 +149,7 @@ def loginMethod():
 def add_to_values(new_data, path):
     data = get_values(path)
 
-    data.append(new_data)
+    data.insert(0, new_data)
 
     with open(path, 'w') as file:
         json.dump(data, file, indent=4)
@@ -247,6 +247,7 @@ def add_IoTdev_page():
         return render_template('No_access.html')
 
 @app.route('/addIoTdevice', methods=["POST"])
+@jwt_required()
 def add_iot_dev():
     jwt_tok = get_jwt()
     if jwt_tok.get('role') == "admin":
@@ -266,7 +267,10 @@ def add_iot_dev():
         return jsonify({'success': False, "message": "Not authenticated"}), 401
 
 @app.route('/addMeasurment', methods=["POST"])
+@jwt_required()
 def add_measurment():
+    jwt_tok = get_jwt()
+    if jwt_tok.get('role') == "admin":
         global measurment_number
         data = request.get_json()
         name = data["Sensor name"]
@@ -276,11 +280,13 @@ def add_measurment():
 
         measurment_number += 1
 
-        add_to_values({"id":measurment_number, "Sensor name":name, "Mesaure":measure, "Sensor value":value, "Sensor Unit of measurment":uom}, measurments_path)
+        add_to_values({"id":measurment_number, "Sensor name":name, "Measure":measure, "Sensor Value":value, "Sensor Unit of measurment":uom}, measurments_path)
 
         response = make_response(redirect(url_for('monitoring_page')))
 
         return response
+    else:
+        return jsonify({'success': False, "message": "Not authenticated"}), 401
 
 @app.route('/deleteIoTdevice', methods=["GET"])
 @jwt_required()
